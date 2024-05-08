@@ -1,12 +1,12 @@
 {
-    "name": "luminarix/:package_slug",
-    "description": ":package_description",
+    "name": "luminarix/laravel-shopify-graphql",
+    "description": "GraphQL client for Shopify.",
     "keywords": [
         "Luminarix Labs",
         "laravel",
-        ":package_slug"
+        "laravel-shopify-graphql"
     ],
-    "homepage": "https://github.com/luminarix/:package_slug",
+    "homepage": "https://github.com/luminarix/laravel-shopify-graphql",
     "license": "MIT",
     "authors": [
         {
@@ -34,13 +34,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Luminarix\\Skeleton\\": "src/",
-            "Luminarix\\Skeleton\\Database\\Factories\\": "database/factories/"
+            "Luminarix\\Shopify\\GraphQLClient\\": "src/",
+            "Luminarix\\Shopify\\GraphQLClient\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Luminarix\\Skeleton\\Tests\\": "tests/"
+            "Luminarix\\Shopify\\GraphQLClient\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -59,10 +59,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Luminarix\\Skeleton\\SkeletonServiceProvider"
+                "Luminarix\\Shopify\\GraphQLClient\\GraphQLClientServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "Luminarix\\Skeleton\\Facades\\Skeleton"
+                "GraphQLClient": "Luminarix\\Shopify\\GraphQLClient\\Facades\\GraphQLClient"
             }
         }
     },
