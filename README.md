@@ -5,7 +5,7 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/luminarix/laravel-shopify-graphql/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/luminarix/laravel-shopify-graphql/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/luminarix/laravel-shopify-graphql.svg?style=flat-square)](https://packagist.org/packages/luminarix/laravel-shopify-graphql)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+This is a work in progress package to provide a GraphQL client for Shopify.
 
 ## Installation
 
@@ -15,30 +15,59 @@ You can install the package via composer:
 composer require luminarix/laravel-shopify-graphql
 ```
 
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="laravel-shopify-graphql-migrations"
-php artisan migrate
-```
-
 You can publish the config file with:
 
 ```bash
 php artisan vendor:publish --tag="laravel-shopify-graphql-config"
 ```
 
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="laravel-shopify-graphql-views"
-```
-
 ## Usage
 
 ```php
-$graphQLClient = new Luminarix\Shopify\GraphQLClient();
-echo $graphQLClient->echoPhrase('Hello, Luminarix!');
+use Luminarix\Shopify\GraphQLClient\GraphQLClient;
+use Luminarix\Shopify\GraphQLClient\Authenticators\PublicApp;
+use Luminarix\Shopify\GraphQLClient\Authenticators\PrivateApp;
+
+$graphql = new GraphQLClient()->factory();
+
+$authenticator = new PublicApp($shopDomain, $accessToken, $clientId, $clientSecret, $apiVersion);
+// OR
+$authenticator = new PrivateApp($shopDomain, $accessToken, $apiKey, $apiSecretKey, $apiVersion);
+
+$client = $graphql->create($authenticator)
+
+// Query
+$query = 'query {
+  node(id: "gid://shopify/Order/148977776") {
+    id
+    ... on Order {
+      name
+    }
+  }
+}';
+
+$response = $client->query($query);
+
+// Mutation
+$mutation = 'mutation orderMarkAsPaid($input: OrderMarkAsPaidInput!) {
+  orderMarkAsPaid(input: $input) {
+    order {
+      # Order fields
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}';
+
+$variables = [
+  'input' => [
+    'id' => 'gid://shopify/<objectName>/10079785100',
+  ],
+];
+
+$response = $client->mutation($mutation, $variables);
 ```
 
 ## Testing
