@@ -24,11 +24,11 @@ php artisan vendor:publish --tag="laravel-shopify-graphql-config"
 ## Usage
 
 ```php
-use Luminarix\Shopify\GraphQLClient\GraphQLClient;
+use Luminarix\Shopify\GraphQLClient\Facades\GraphQLClient;
 use Luminarix\Shopify\GraphQLClient\Authenticators\PublicApp;
 use Luminarix\Shopify\GraphQLClient\Authenticators\PrivateApp;
 
-$graphql = new GraphQLClient()->factory();
+$graphql = GraphQLClient::factory();
 
 $authenticator = new PublicApp($shopDomain, $accessToken, $clientId, $clientSecret, $apiVersion);
 // OR
