@@ -1,39 +1,48 @@
 {
-  "preset": "laravel",
-  "rules": {
-    "concat_space": {
-      "spacing": "one"
-    },
-    "cast_spaces": false,
-    "fully_qualified_strict_types": true,
-    "array_push": true,
-    "strict_comparison": true,
-    "not_operator_with_successor_space": false,
-    "nullable_type_declaration_for_default_null_value": true,
-    "no_useless_else": true,
-    "no_unneeded_import_alias": true,
-    "no_empty_comment": true,
-    "global_namespace_import": true,
-    "no_extra_blank_lines": {
-      "tokens": [
-        "attribute",
-        "break",
-        "case",
-        "continue",
-        "curly_brace_block",
-        "default",
-        "extra",
-        "parenthesis_brace_block",
-        "return",
-        "square_brace_block",
-        "switch",
-        "throw",
-        "use",
-        "use_trait"
-      ]
-    },
-    "no_useless_concat_operator": {
-      "juggle_simple_strings": true
+    "preset": "laravel",
+    "rules": {
+        "concat_space": {
+            "spacing": "one"
+        },
+        "cast_spaces": false,
+        "array_push": true,
+        "strict_comparison": true,
+        "not_operator_with_successor_space": false,
+        "nullable_type_declaration_for_default_null_value": true,
+        "no_useless_else": true,
+        "no_unneeded_import_alias": true,
+        "no_empty_comment": true,
+        "global_namespace_import": true,
+        "no_extra_blank_lines": {
+            "tokens": [
+                "attribute",
+                "break",
+                "case",
+                "continue",
+                "curly_brace_block",
+                "default",
+                "extra",
+                "parenthesis_brace_block",
+                "return",
+                "square_brace_block",
+                "switch",
+                "throw",
+                "use",
+                "use_trait"
+            ]
+        },
+        "no_useless_concat_operator": {
+            "juggle_simple_strings": true
+        },
+        "fully_qualified_strict_types": true,
+        "ordered_class_elements": true,
+        "numeric_literal_separator": true,
+        "combine_consecutive_unsets": true,
+        "combine_consecutive_issets": true,
+        "constant_case": true,
+        "explicit_string_variable": true,
+        "is_null": true,
+        "mb_str_functions": true,
+        "modernize_strpos": true
     }
-  }
 }

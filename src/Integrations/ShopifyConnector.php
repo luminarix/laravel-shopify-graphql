@@ -23,13 +23,13 @@ class ShopifyConnector extends Connector
         return "https://{$this->appAuthenticator->getShopDomain()}/admin/api/{$this->appAuthenticator->getApiVersion()}";
     }
 
-    protected function defaultAuth(): HeaderAuthenticator
-    {
-        return new HeaderAuthenticator($this->appAuthenticator->accessToken, 'X-Shopify-Access-Token');
-    }
-
     public function create(): ShopifyResource
     {
         return new ShopifyResource($this);
+    }
+
+    protected function defaultAuth(): HeaderAuthenticator
+    {
+        return new HeaderAuthenticator($this->appAuthenticator->accessToken, 'X-Shopify-Access-Token');
     }
 }
