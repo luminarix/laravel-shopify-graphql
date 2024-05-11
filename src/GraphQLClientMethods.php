@@ -6,6 +6,7 @@ namespace Luminarix\Shopify\GraphQLClient;
 
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientNotInitializedException;
+use Luminarix\Shopify\GraphQLClient\Exceptions\ClientRequestFailedException;
 use Luminarix\Shopify\GraphQLClient\Integrations\ShopifyConnector;
 
 class GraphQLClientMethods
@@ -17,21 +18,33 @@ class GraphQLClientMethods
         $this->connector = new ShopifyConnector($this->appAuthenticator);
     }
 
-    public function query(string $query): array
+    /**
+     * @throws ClientNotInitializedException If the connector is not set
+     * @throws ClientRequestFailedException If the response contains errors
+     */
+    public function query(string $query, bool $withExtensions = false, bool $detailedCost = false): array
     {
-        if ($this->connector === null) {
-            throw new ClientNotInitializedException('Connector is not set');
-        }
+        throw_if($this->connector === null, ClientNotInitializedException::class);
 
-        return $this->connector->create()->query($query)->json();
+        $response = $this->connector->create()->query($query, $detailedCost);
+
+        throw_if($response->failed(), ClientRequestFailedException::class, $response);
+
+        return $withExtensions ? $response->json() : $response->json()['data'];
     }
 
-    public function mutate(string $query, array $variables): array
+    /**
+     * @throws ClientNotInitializedException If the connector is not set
+     * @throws ClientRequestFailedException If the response contains errors
+     */
+    public function mutate(string $query, array $variables, bool $withExtensions = false, bool $detailedCost = false): array
     {
-        if ($this->connector === null) {
-            throw new ClientNotInitializedException('Connector is not set');
-        }
+        throw_if($this->connector === null, ClientNotInitializedException::class);
 
-        return $this->connector->create()->mutation($query, $variables)->json();
+        $response = $this->connector->create()->mutation($query, $variables, $detailedCost);
+
+        throw_if($response->failed(), ClientRequestFailedException::class, $response);
+
+        return $withExtensions ? $response->json() : $response->json()['data'];
     }
 }
