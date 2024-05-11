@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Luminarix\Shopify\GraphQLClient\Integrations;
 
+use Illuminate\Support\Arr;
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
 use Saloon\Http\Auth\HeaderAuthenticator;
 use Saloon\Http\Connector;
+use Saloon\Http\Response;
 
 class ShopifyConnector extends Connector
 {
@@ -26,6 +28,11 @@ class ShopifyConnector extends Connector
     public function create(): ShopifyResource
     {
         return new ShopifyResource($this);
+    }
+
+    public function hasRequestFailed(Response $response): ?bool
+    {
+        return Arr::exists($response->json(), 'errors');
     }
 
     protected function defaultAuth(): HeaderAuthenticator
