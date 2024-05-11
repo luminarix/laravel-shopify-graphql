@@ -16,13 +16,17 @@ class ShopifyResource
     ) {
     }
 
-    public function query(string $graphqlQuery): Response
+    public function query(string $graphqlQuery, bool $detailedCost = false): Response
     {
-        return $this->connector->send(new Query($graphqlQuery));
+        return $this->connector->send(
+            new Query($graphqlQuery, $detailedCost)
+        );
     }
 
-    public function mutation(string $graphqlQuery, array $variables): Response
+    public function mutation(string $graphqlQuery, array $variables, bool $detailedCost = false): Response
     {
-        return $this->connector->send(new Mutation($graphqlQuery, $variables));
+        return $this->connector->send(
+            new Mutation($graphqlQuery, $variables, $detailedCost)
+        );
     }
 }

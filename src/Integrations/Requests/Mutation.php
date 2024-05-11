@@ -9,6 +9,7 @@ class Mutation extends BaseRequest
     public function __construct(
         public string $graphqlQuery,
         public array $variables,
+        public bool $detailedCost = false
     ) {
     }
 
