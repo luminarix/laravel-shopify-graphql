@@ -15,7 +15,7 @@ class GraphQLClientServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package
-            ->name('laravel-shopify-graphql')
+            ->name('shopify-graphql')
             ->hasConfigFile();
     }
 }
