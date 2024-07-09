@@ -7,13 +7,11 @@ namespace Luminarix\Shopify\GraphQLClient\Authenticators;
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
 use SensitiveParameter;
 
-class PrivateApp extends AbstractAppAuthenticator
+class ShopifyApp extends AbstractAppAuthenticator
 {
     public function __construct(
         string $shopDomain,
         #[SensitiveParameter] public string $accessToken,
-        public string $apiKey,
-        #[SensitiveParameter] public string $apiSecretKey,
         ?string $apiVersion = null,
     ) {
         $this->setShopDomain($shopDomain);
