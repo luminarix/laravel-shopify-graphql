@@ -22,7 +22,7 @@ class GraphQLClientMethods
      * @throws ClientNotInitializedException If the connector is not set
      * @throws ClientRequestFailedException If the response contains errors
      */
-    public function query(string $query, bool $withExtensions = false, bool $detailedCost = false): array
+    public function query(string $query, bool $withExtensions = false, bool $detailedCost = false): GraphQLClientTransformer
     {
         throw_if($this->connector === null, ClientNotInitializedException::class);
 
@@ -30,14 +30,16 @@ class GraphQLClientMethods
 
         throw_if($response->failed(), ClientRequestFailedException::class, $response);
 
-        return $withExtensions ? $response->json() : $response->json()['data'];
+        return new GraphQLClientTransformer(
+            data: $withExtensions ? $response->json() : $response->json()['data']
+        );
     }
 
     /**
      * @throws ClientNotInitializedException If the connector is not set
      * @throws ClientRequestFailedException If the response contains errors
      */
-    public function mutate(string $query, array $variables, bool $withExtensions = false, bool $detailedCost = false): array
+    public function mutate(string $query, array $variables, bool $withExtensions = false, bool $detailedCost = false): GraphQLClientTransformer
     {
         throw_if($this->connector === null, ClientNotInitializedException::class);
 
@@ -45,6 +47,8 @@ class GraphQLClientMethods
 
         throw_if($response->failed(), ClientRequestFailedException::class, $response);
 
-        return $withExtensions ? $response->json() : $response->json()['data'];
+        return new GraphQLClientTransformer(
+            data: $withExtensions ? $response->json() : $response->json()['data']
+        );
     }
 }
