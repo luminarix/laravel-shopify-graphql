@@ -9,8 +9,7 @@ class Query extends BaseRequest
     public function __construct(
         public string $graphqlQuery,
         public bool $detailedCost = false
-    ) {
-    }
+    ) {}
 
     protected function defaultBody(): array
     {

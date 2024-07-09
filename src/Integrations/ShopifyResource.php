@@ -13,8 +13,7 @@ class ShopifyResource
 {
     public function __construct(
         protected Connector $connector,
-    ) {
-    }
+    ) {}
 
     public function query(string $graphqlQuery, bool $detailedCost = false): Response
     {

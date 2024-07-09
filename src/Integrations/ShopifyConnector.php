@@ -14,8 +14,7 @@ class ShopifyConnector extends Connector
 {
     public function __construct(
         public AbstractAppAuthenticator $appAuthenticator,
-    ) {
-    }
+    ) {}
 
     /**
      * The base URL for the Shopify GraphQL API.

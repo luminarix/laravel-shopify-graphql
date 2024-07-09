@@ -10,8 +10,7 @@ class Mutation extends BaseRequest
         public string $graphqlQuery,
         public array $variables,
         public bool $detailedCost = false
-    ) {
-    }
+    ) {}
 
     protected function defaultBody(): array
     {
