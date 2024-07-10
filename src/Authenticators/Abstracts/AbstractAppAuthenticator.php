@@ -19,6 +19,10 @@ class AbstractAppAuthenticator
     {
         $shopDomain = preg_replace('#^https?://|/$#', '', $shopDomain);
 
+        if ($shopDomain === null) {
+            throw new InvalidArgumentException('Invalid shop URL. The shop URL cannot be empty.');
+        }
+
         if (!Str::endsWith($shopDomain, '.myshopify.com')) {
             throw new InvalidArgumentException('Invalid shop URL. The shop URL must end with ".myshopify.com".');
         }
@@ -31,7 +35,7 @@ class AbstractAppAuthenticator
         return $this->shopDomain;
     }
 
-    public function setApiVersion(?string $apiVersion): void
+    public function setApiVersion(string $apiVersion): void
     {
         if (!preg_match('/\d{4}-\d{2}/', $apiVersion)) {
             throw new InvalidArgumentException('Invalid API version. The API version must match the pattern "YYYY-MM".');

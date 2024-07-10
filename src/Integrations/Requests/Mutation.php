@@ -6,6 +6,9 @@ namespace Luminarix\Shopify\GraphQLClient\Integrations\Requests;
 
 class Mutation extends BaseRequest
 {
+    /**
+     * @param  mixed[]  $variables
+     */
     public function __construct(
         public string $graphqlQuery,
         public array $variables,

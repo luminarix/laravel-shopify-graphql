@@ -27,6 +27,9 @@ class BaseRequest extends Request implements HasBody
         return $this->detailedCost ? $this->detailedCost() : [];
     }
 
+    /**
+     * @return array<string, string>
+     */
     private function detailedCost(): array
     {
         return [

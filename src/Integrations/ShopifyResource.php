@@ -22,6 +22,9 @@ class ShopifyResource
         );
     }
 
+    /**
+     * @param  array<mixed, mixed>  $variables
+     */
     public function mutation(string $graphqlQuery, array $variables, bool $detailedCost = false): Response
     {
         return $this->connector->send(

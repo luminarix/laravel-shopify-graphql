@@ -15,6 +15,9 @@ class ShopifyApp extends AbstractAppAuthenticator
         ?string $apiVersion = null,
     ) {
         $this->setShopDomain($shopDomain);
-        $this->setApiVersion($apiVersion ?? config('shopify-graphql.api_version'));
+
+        /** @var string $configApiVersion */
+        $configApiVersion = config('shopify-graphql.api_version');
+        $this->setApiVersion($apiVersion ?? $configApiVersion);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Luminarix\Shopify\GraphQLClient;
 
+use Illuminate\Support\Arr;
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientNotInitializedException;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientRequestFailedException;
@@ -31,11 +32,13 @@ class GraphQLClientMethods
         throw_if($response->failed(), ClientRequestFailedException::class, $response);
 
         return new GraphQLClientTransformer(
-            data: $withExtensions ? $response->json() : $response->json()['data']
+            data: $withExtensions ? Arr::wrap($response->json()) : Arr::wrap($response->json()['data'])
         );
     }
 
     /**
+     * @param  array<mixed, mixed>  $variables
+     *
      * @throws ClientNotInitializedException If the connector is not set
      * @throws ClientRequestFailedException If the response contains errors
      */
@@ -48,7 +51,7 @@ class GraphQLClientMethods
         throw_if($response->failed(), ClientRequestFailedException::class, $response);
 
         return new GraphQLClientTransformer(
-            data: $withExtensions ? $response->json() : $response->json()['data']
+            data: $withExtensions ? Arr::wrap($response->json()) : Arr::wrap($response->json()['data'])
         );
     }
 }
