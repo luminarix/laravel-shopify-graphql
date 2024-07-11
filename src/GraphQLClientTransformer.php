@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Luminarix\Shopify\GraphQLClient;
 
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 readonly class GraphQLClientTransformer
@@ -19,6 +20,11 @@ readonly class GraphQLClientTransformer
     public function toArray(): array
     {
         return $this->data;
+    }
+
+    public function toCollection(): Collection
+    {
+        return collect($this->data);
     }
 
     public function toJson(int $flags = 0, int $depth = 512): string
