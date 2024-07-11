@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Luminarix\Shopify\GraphQLClient;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Traits\Macroable;
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientNotInitializedException;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientRequestFailedException;
@@ -12,6 +13,8 @@ use Luminarix\Shopify\GraphQLClient\Integrations\ShopifyConnector;
 
 class GraphQLClientMethods
 {
+    use Macroable;
+
     public function __construct(
         private readonly AbstractAppAuthenticator $appAuthenticator,
         private ?ShopifyConnector $connector = null,
