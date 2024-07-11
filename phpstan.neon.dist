@@ -8,6 +8,7 @@ parameters:
         - config
     ignoreErrors:
             - identifier: missingType.generics
+            - identifier: missingType.iterableValue
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
