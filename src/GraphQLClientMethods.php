@@ -18,11 +18,11 @@ class GraphQLClientMethods
 {
     use Macroable;
 
-    private ?int $maxAvailableLimit = null;
+    private float|int|null $maxAvailableLimit = null;
 
-    private ?int $lastAvailableLimit = null;
+    private float|int|null $lastAvailableLimit = null;
 
-    private ?int $restoreRate = null;
+    private float|int|null $restoreRate = null;
 
     public function __construct(
         private readonly AbstractAppAuthenticator $appAuthenticator,
@@ -95,9 +95,9 @@ class GraphQLClientMethods
     }
 
     #[ArrayShape([
-        'maxAvailableLimit' => 'int',
-        'lastAvailableLimit' => 'int',
-        'restoreRate' => 'int',
+        'maxAvailableLimit' => 'float|int|null',
+        'lastAvailableLimit' => 'float|int|null',
+        'restoreRate' => 'float|int|null',
     ])]
     public function getRateLimitInfo(): array
     {
@@ -120,16 +120,16 @@ class GraphQLClientMethods
             return;
         }
 
-        /** @var ?int $requestedQueryCost */
+        /** @var float|int|null $requestedQueryCost */
         $requestedQueryCost = data_get($response, 'extensions.cost.requestedQueryCost');
-        /** @var ?int $actualQueryCost */
+        /** @var float|int|null $actualQueryCost */
         $actualQueryCost = data_get($response, 'extensions.cost.actualQueryCost');
 
-        /** @var ?int $maxAvailableLimit */
+        /** @var float|int|null $maxAvailableLimit */
         $maxAvailableLimit = data_get($response, 'extensions.cost.throttleStatus.maximumAvailable');
-        /** @var ?int $lastAvailableLimit */
+        /** @var float|int|null $lastAvailableLimit */
         $lastAvailableLimit = data_get($response, 'extensions.cost.throttleStatus.currentlyAvailable');
-        /** @var ?int $restoreRate */
+        /** @var float|int|null $restoreRate */
         $restoreRate = data_get($response, 'extensions.cost.throttleStatus.restoreRate');
 
         $this->updateRateLimitInfo($maxAvailableLimit, $lastAvailableLimit, $restoreRate);
@@ -165,7 +165,7 @@ class GraphQLClientMethods
         }
     }
 
-    private function updateRateLimitInfo(?int $maxAvailable, ?int $lastAvailable, ?int $restoreRate): void
+    private function updateRateLimitInfo(float|int|null $maxAvailable, float|int|null $lastAvailable, float|int|null $restoreRate): void
     {
         $this->maxAvailableLimit = $maxAvailable;
         $this->lastAvailableLimit = $lastAvailable;
