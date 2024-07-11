@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Luminarix\Shopify\GraphQLClient;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Traits\Macroable;
+use JetBrains\PhpStorm\ArrayShape;
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
+use Luminarix\Shopify\GraphQLClient\Enums\GraphQLRequestType;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientNotInitializedException;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientRequestFailedException;
 use Luminarix\Shopify\GraphQLClient\Integrations\ShopifyConnector;
@@ -14,6 +17,12 @@ use Luminarix\Shopify\GraphQLClient\Integrations\ShopifyConnector;
 class GraphQLClientMethods
 {
     use Macroable;
+
+    private ?int $maxAvailableLimit = null;
+
+    private ?int $lastAvailableLimit = null;
+
+    private ?int $restoreRate = null;
 
     public function __construct(
         private readonly AbstractAppAuthenticator $appAuthenticator,
@@ -34,8 +43,20 @@ class GraphQLClientMethods
 
         throw_if($response->failed(), ClientRequestFailedException::class, $response);
 
+        $response = $response->json();
+
+        $this->ispectResponse(
+            type: GraphQLRequestType::QUERY,
+            response: $response,
+            query: $query,
+            withExtensions: $withExtensions,
+            detailedCost: $detailedCost
+        );
+
         return new GraphQLClientTransformer(
-            data: $withExtensions ? Arr::wrap($response->json()) : Arr::wrap($response->json()['data'])
+            data: array_filter(Arr::wrap(
+                value: $withExtensions ? $response : data_get($response, 'data')
+            ))
         );
     }
 
@@ -53,8 +74,101 @@ class GraphQLClientMethods
 
         throw_if($response->failed(), ClientRequestFailedException::class, $response);
 
-        return new GraphQLClientTransformer(
-            data: $withExtensions ? Arr::wrap($response->json()) : Arr::wrap($response->json()['data'])
+        $response = $response->json();
+
+        $this->ispectResponse(
+            type: GraphQLRequestType::MUTATION,
+            response: $response,
+            query: $query,
+            withExtensions: $withExtensions,
+            detailedCost: $detailedCost,
+            variables: $variables
         );
+
+        return new GraphQLClientTransformer(
+            data: array_filter(
+                Arr::wrap(
+                    value: $withExtensions ? $response : data_get($response, 'data')
+                )
+            )
+        );
+    }
+
+    #[ArrayShape([
+        'maxAvailableLimit' => 'int',
+        'lastAvailableLimit' => 'int',
+        'restoreRate' => 'int',
+    ])]
+    public function getRateLimitInfo(): array
+    {
+        return [
+            'maxAvailableLimit' => $this->maxAvailableLimit,
+            'lastAvailableLimit' => $this->lastAvailableLimit,
+            'restoreRate' => $this->restoreRate,
+        ];
+    }
+
+    private function ispectResponse(
+        GraphQLRequestType $type,
+        mixed $response,
+        string $query,
+        bool $withExtensions,
+        bool $detailedCost,
+        array $variables = [],
+    ): void {
+        if (!is_array($response)) {
+            return;
+        }
+
+        /** @var ?int $requestedQueryCost */
+        $requestedQueryCost = data_get($response, 'extensions.cost.requestedQueryCost');
+        /** @var ?int $actualQueryCost */
+        $actualQueryCost = data_get($response, 'extensions.cost.actualQueryCost');
+
+        /** @var ?int $maxAvailableLimit */
+        $maxAvailableLimit = data_get($response, 'extensions.cost.throttleStatus.maximumAvailable');
+        /** @var ?int $lastAvailableLimit */
+        $lastAvailableLimit = data_get($response, 'extensions.cost.throttleStatus.currentlyAvailable');
+        /** @var ?int $restoreRate */
+        $restoreRate = data_get($response, 'extensions.cost.throttleStatus.restoreRate');
+
+        $this->updateRateLimitInfo($maxAvailableLimit, $lastAvailableLimit, $restoreRate);
+
+        $context = [
+            'type' => $type->value,
+            'query' => $query,
+            'variables' => $variables,
+            'withExtensions' => $withExtensions,
+            'detailedCost' => $detailedCost,
+            'requestedQueryCost' => $requestedQueryCost,
+            'actualQueryCost' => $actualQueryCost,
+        ];
+
+        if (
+            $requestedQueryCost !== null &&
+            $requestedQueryCost > 900
+        ) {
+            Log::warning(
+                message: "The requested query cost is high: {$requestedQueryCost}\nConsider optimizing the query (see context).",
+                context: $context
+            );
+        }
+
+        if (
+            $actualQueryCost !== null &&
+            $actualQueryCost > 900
+        ) {
+            Log::warning(
+                message: "The actual query cost is high: {$actualQueryCost}\nConsider optimizing the query (see context).",
+                context: $context
+            );
+        }
+    }
+
+    private function updateRateLimitInfo(?int $maxAvailable, ?int $lastAvailable, ?int $restoreRate): void
+    {
+        $this->maxAvailableLimit = $maxAvailable;
+        $this->lastAvailableLimit = $lastAvailable;
+        $this->restoreRate = $restoreRate;
     }
 }
