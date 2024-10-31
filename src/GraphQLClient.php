@@ -6,6 +6,6 @@ class GraphQLClient
 {
     public function factory(): GraphQLClientCreate
     {
-        return new GraphQLClientCreate();
+        return new GraphQLClientCreate;
     }
 }
