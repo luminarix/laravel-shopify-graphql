@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Luminarix\Shopify\GraphQLClient;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Fluent;
 use InvalidArgumentException;
 
 readonly class GraphQLClientTransformer
@@ -20,6 +21,11 @@ readonly class GraphQLClientTransformer
     public function toArray(): array
     {
         return $this->data;
+    }
+
+    public function toFluent(): Fluent
+    {
+        return fluent($this->data);
     }
 
     public function toCollection(): Collection
