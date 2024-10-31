@@ -11,15 +11,15 @@ class Mutation extends BaseRequest
      */
     public function __construct(
         public string $graphqlQuery,
-        public array $variables,
+        public array $variables = [],
         public bool $detailedCost = false
     ) {}
 
     protected function defaultBody(): array
     {
-        return [
+        return array_filter([
             'query' => $this->graphqlQuery,
             'variables' => $this->variables,
-        ];
+        ]);
     }
 }
