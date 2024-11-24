@@ -19,10 +19,9 @@ class RateLimitService
 
     public function getRateLimitInfo(): array
     {
-        /** @var ?string $rateLimit */
         $rateLimit = Redis::get($this->redisKey);
 
-        if ($rateLimit) {
+        if (is_string($rateLimit)) {
             return Arr::wrap(json_decode($rateLimit, true));
         }
 
