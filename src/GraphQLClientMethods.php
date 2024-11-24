@@ -120,7 +120,7 @@ class GraphQLClientMethods
                 return $this->makeQueryRequest($query, $withExtensions, $detailedCost);
             }
 
-            throw_if(true, ClientRequestFailedException::class, $response);
+            throw_if(true, ClientRequestFailedException::class, json_encode($response));
         }
 
         return $response;
@@ -151,7 +151,7 @@ class GraphQLClientMethods
                 return $this->makeMutationRequest($query, $variables, $withExtensions, $detailedCost);
             }
 
-            throw_if(true, ClientRequestFailedException::class, $response);
+            throw_if(true, ClientRequestFailedException::class, json_encode($response));
         }
 
         return $response;
