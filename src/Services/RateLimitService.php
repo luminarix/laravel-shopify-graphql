@@ -7,6 +7,7 @@ namespace Luminarix\Shopify\GraphQLClient\Services;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Sleep;
+use Illuminate\Support\Str;
 
 class RateLimitService
 {
@@ -14,7 +15,8 @@ class RateLimitService
 
     public function __construct(private readonly string $shopDomain)
     {
-        $this->redisKey = "shopify_graphql_rate_limit_{$this->shopDomain}";
+        $shopDomainKey = Str::replace(['.'], '_', $this->shopDomain);
+        $this->redisKey = "shopify_graphql_rate_limit:{$shopDomainKey}";
     }
 
     public function getRateLimitInfo(): array
