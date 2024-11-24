@@ -13,7 +13,7 @@ class AbstractAppAuthenticator
 
     private string $shopDomain;
 
-    private ?string $apiVersion;
+    private string $apiVersion;
 
     public function setShopDomain(string $shopDomain): void
     {
