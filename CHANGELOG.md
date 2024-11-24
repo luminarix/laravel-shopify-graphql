@@ -2,6 +2,10 @@
 
 All notable changes to `laravel-shopify-graphql` will be documented in this file.
 
+## v2.0.0 - 2024-11-24
+
+**Full Changelog**: https://github.com/luminarix/laravel-shopify-graphql/compare/v1.3.0...v2.0.0
+
 ## v1.3.0 - 2024-10-31
 
 **Full Changelog**: https://github.com/luminarix/laravel-shopify-graphql/compare/v1.2.1...v1.3.0
