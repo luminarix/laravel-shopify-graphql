@@ -31,11 +31,22 @@ class ShopifyConnector extends Connector
 
     public function hasRequestFailed(Response $response): ?bool
     {
-        return Arr::exists($response->json(), 'errors');
+        $isThrottled = $this->isThrottled($response);
+
+        if ($isThrottled && config('shopify-graphql.fail_on_throttled')) {
+            return true;
+        }
+
+        return Arr::exists($response->json(), 'errors') && !$isThrottled;
     }
 
     protected function defaultAuth(): HeaderAuthenticator
     {
         return new HeaderAuthenticator($this->appAuthenticator->accessToken, 'X-Shopify-Access-Token');
+    }
+
+    private function isThrottled(Response $response): bool
+    {
+        return Arr::exists($response->json(), 'errors') && data_get($response->json(), 'errors.0.extensions.code') === 'THROTTLED';
     }
 }
