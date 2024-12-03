@@ -82,7 +82,7 @@ class RateLimitService
         $waitTime = $costToWaitFor / $rateLimitInfo['restoreRate'];
 
         // Add a small buffer to be safe
-        $waitTime += 0.1;
+        $waitTime++;
 
         return $waitTime;
     }
