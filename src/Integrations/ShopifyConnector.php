@@ -37,7 +37,12 @@ class ShopifyConnector extends Connector
             return true;
         }
 
-        return Arr::exists($response->json(), 'errors') && !$isThrottled;
+        $responseJson = $response->json();
+        $hasErrors = data_get($responseJson, 'errors') !== null;
+        /** @var array $bulkOperationUserErrors */
+        $bulkOperationUserErrors = data_get($responseJson, 'data.bulkOperationRunQuery.userErrors', []);
+
+        return ($hasErrors && !$isThrottled) || count($bulkOperationUserErrors);
     }
 
     protected function defaultAuth(): HeaderAuthenticator
