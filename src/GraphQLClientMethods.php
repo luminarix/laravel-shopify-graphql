@@ -75,6 +75,42 @@ class GraphQLClientMethods
         );
     }
 
+    public function getCurrentBulkOperation(): GraphQLClientTransformer
+    {
+        $response = $this->makeGetCurrentBulkOperationRequest();
+
+        /** @var array $response */
+        $response = data_get($response, 'data.currentBulkOperation');
+
+        return new GraphQLClientTransformer(
+            data: $response
+        );
+    }
+
+    public function createBulkOperation(string $query): GraphQLClientTransformer
+    {
+        $response = $this->makeCreateBulkOperationRequest($query);
+
+        /** @var array $response */
+        $response = data_get($response, 'data.bulkOperationRunQuery');
+
+        return new GraphQLClientTransformer(
+            data: $response
+        );
+    }
+
+    public function cancelBulkOperation(): GraphQLClientTransformer
+    {
+        $response = $this->makeCancelBulkOperationRequest();
+
+        /** @var array $response */
+        $response = data_get($response, 'data.bulkOperationCancel');
+
+        return new GraphQLClientTransformer(
+            data: $response
+        );
+    }
+
     #[ArrayShape([
         'requestedQueryCost' => 'float|int|null',
         'actualQueryCost' => 'float|int|null',
@@ -155,6 +191,61 @@ class GraphQLClientMethods
         }
 
         return $response;
+    }
+
+    /**
+     * @throws ClientNotInitializedException
+     * @throws ClientRequestFailedException
+     */
+    private function makeGetCurrentBulkOperationRequest(): array
+    {
+        throw_if($this->connector === null, ClientNotInitializedException::class);
+
+        $response = $this->connector->create()->currentBulkOperation();
+
+        throw_if($response->failed(), ClientRequestFailedException::class, $response);
+
+        return Arr::wrap($response->json());
+    }
+
+    /**
+     * @throws ClientNotInitializedException
+     * @throws ClientRequestFailedException
+     */
+    private function makeCreateBulkOperationRequest(string $query): array
+    {
+        throw_if($this->connector === null, ClientNotInitializedException::class);
+
+        $response = $this->connector->create()->createBulkOperation($query);
+
+        throw_if($response->failed(), ClientRequestFailedException::class, $response);
+
+        return Arr::wrap($response->json());
+    }
+
+    /**
+     * @throws ClientNotInitializedException
+     * @throws ClientRequestFailedException
+     */
+    private function makeCancelBulkOperationRequest(): array
+    {
+        throw_if($this->connector === null, ClientNotInitializedException::class);
+
+        /** @var array $currentBulkOperation */
+        $currentBulkOperation = data_get($this->makeGetCurrentBulkOperationRequest(), 'data.currentBulkOperation');
+        /** @var ?string $currentBulkOperationId */
+        $currentBulkOperationId = data_get($currentBulkOperation, 'id');
+        /** @var ?string $currentBulkOperationStatus */
+        $currentBulkOperationStatus = data_get($currentBulkOperation, 'status');
+        $doesntHaveIdOrNotCancellable = $currentBulkOperationId === null || !in_array($currentBulkOperationStatus, ['CREATED', 'RUNNING']);
+
+        throw_if($doesntHaveIdOrNotCancellable, ClientRequestFailedException::class, 'There is no bulk operation to cancel.');
+
+        $response = $this->connector->create()->cancelBulkOperation($currentBulkOperationId);
+
+        throw_if($response->failed(), ClientRequestFailedException::class, $response);
+
+        return Arr::wrap($response->json());
     }
 
     private function ispectResponse(

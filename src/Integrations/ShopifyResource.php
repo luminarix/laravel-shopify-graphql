@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Luminarix\Shopify\GraphQLClient\Integrations;
 
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\CancelBulkOperation;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\CreateBulkOperation;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\CurrentBulkOperation;
 use Luminarix\Shopify\GraphQLClient\Integrations\Requests\Mutation;
 use Luminarix\Shopify\GraphQLClient\Integrations\Requests\Query;
 use Saloon\Http\Connector;
@@ -29,6 +32,27 @@ class ShopifyResource
     {
         return $this->connector->send(
             new Mutation($graphqlQuery, $variables, $detailedCost)
+        );
+    }
+
+    public function currentBulkOperation(): Response
+    {
+        return $this->connector->send(
+            new CurrentBulkOperation
+        );
+    }
+
+    public function createBulkOperation(string $graphqlQuery): Response
+    {
+        return $this->connector->send(
+            new CreateBulkOperation($graphqlQuery)
+        );
+    }
+
+    public function cancelBulkOperation(string $id): Response
+    {
+        return $this->connector->send(
+            new CancelBulkOperation($id)
         );
     }
 }
