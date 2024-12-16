@@ -8,8 +8,9 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
+use Luminarix\Shopify\GraphQLClient\Contracts\RateLimitable;
 
-class RateLimitService
+class RateLimitService implements RateLimitable
 {
     private string $redisKey;
 
