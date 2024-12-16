@@ -19,6 +19,8 @@ class GraphQLClientMethods
 {
     use Macroable;
 
+    private ?ShopifyConnector $connector = null;
+
     private float|int|null $requestedQueryCost = null;
 
     private float|int|null $actualQueryCost = null;
@@ -35,10 +37,9 @@ class GraphQLClientMethods
 
     public function __construct(
         private readonly AbstractAppAuthenticator $appAuthenticator,
-        private ?ShopifyConnector $connector = null,
         private ?RateLimitable $rateLimitService = null,
     ) {
-        $this->connector ??= new ShopifyConnector($this->appAuthenticator);
+        $this->connector = new ShopifyConnector($this->appAuthenticator);
         $this->rateLimitService ??= new RedisRateLimitService($this->appAuthenticator->getShopDomain());
     }
 
