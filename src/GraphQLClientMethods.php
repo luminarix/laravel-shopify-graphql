@@ -161,6 +161,7 @@ class GraphQLClientMethods
             if ($this->tries < config('shopify-graphql.throttle_max_tries')) {
                 $this->tries++;
 
+                // @phpstan-ignore method.nonObject
                 $this->rateLimitService->waitIfNecessary((float)$this->requestedQueryCost);
 
                 return $this->makeQueryRequest($query, $withExtensions, $detailedCost);
@@ -192,6 +193,7 @@ class GraphQLClientMethods
             if ($this->tries < config('shopify-graphql.throttle_max_tries')) {
                 $this->tries++;
 
+                // @phpstan-ignore method.nonObject
                 $this->rateLimitService->waitIfNecessary((float)$this->requestedQueryCost);
 
                 return $this->makeMutationRequest($query, $variables, $withExtensions, $detailedCost);
@@ -278,6 +280,8 @@ class GraphQLClientMethods
             'currentlyAvailable' => $this->currentlyAvailable,
             'restoreRate' => $this->restoreRate,
         ];
+
+        // @phpstan-ignore method.nonObject
         $this->rateLimitService->updateRateLimitInfo($rateLimitData);
     }
 

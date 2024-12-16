@@ -7,6 +7,7 @@ namespace Luminarix\Shopify\GraphQLClient\Services;
 use GraphQL\Language\AST\ArgumentNode;
 use GraphQL\Language\AST\FieldNode;
 use GraphQL\Language\AST\NameNode;
+use GraphQL\Language\AST\Node;
 use GraphQL\Language\AST\NodeList;
 use GraphQL\Language\AST\SelectionSetNode;
 use GraphQL\Language\Parser;
@@ -55,10 +56,12 @@ class QueryTransformer implements QueryTransformable
 
     private static function applyPaginationArguments(NodeList $arguments, array $paginationArgs): NodeList
     {
+        /** @var Node[] $argsArray */
         $argsArray = iterator_to_array($arguments);
         $argsMap = [];
 
         foreach ($argsArray as $argNode) {
+            // @phpstan-ignore property.notFound
             $argsMap[$argNode->name->value] = $argNode;
         }
 
@@ -86,10 +89,6 @@ class QueryTransformer implements QueryTransformable
             return (string)$value;
         }
 
-        if (is_string($value)) {
-            return json_encode($value, JSON_UNESCAPED_UNICODE);
-        }
-
         if (is_array($value)) {
             if (Arr::isAssoc($value)) {
                 $fields = [];
@@ -105,6 +104,6 @@ class QueryTransformer implements QueryTransformable
             return '[' . implode(', ', $items) . ']';
         }
 
-        return json_encode((string)$value, JSON_UNESCAPED_UNICODE);
+        return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     }
 }
