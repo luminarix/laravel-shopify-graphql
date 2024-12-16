@@ -10,7 +10,7 @@ use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 use Luminarix\Shopify\GraphQLClient\Contracts\RateLimitable;
 
-class RateLimitService implements RateLimitable
+class RedisRateLimitService implements RateLimitable
 {
     private string $redisKey;
 
