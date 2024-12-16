@@ -8,16 +8,16 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\Macroable;
 use JetBrains\PhpStorm\ArrayShape;
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
+use Luminarix\Shopify\GraphQLClient\Contracts\RateLimitable;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientNotInitializedException;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientRequestFailedException;
 use Luminarix\Shopify\GraphQLClient\Integrations\ShopifyConnector;
-use Luminarix\Shopify\GraphQLClient\Services\RateLimitService;
+use Luminarix\Shopify\GraphQLClient\Services\QueryTransformer;
+use Luminarix\Shopify\GraphQLClient\Services\RedisRateLimitService;
 
 class GraphQLClientMethods
 {
     use Macroable;
-
-    private RateLimitService $rateLimitService;
 
     private float|int|null $requestedQueryCost = null;
 
@@ -36,17 +36,22 @@ class GraphQLClientMethods
     public function __construct(
         private readonly AbstractAppAuthenticator $appAuthenticator,
         private ?ShopifyConnector $connector = null,
+        private ?RateLimitable $rateLimitService = null,
     ) {
-        $this->connector = new ShopifyConnector($this->appAuthenticator);
-        $this->rateLimitService = new RateLimitService($this->appAuthenticator->getShopDomain());
+        $this->connector ??= new ShopifyConnector($this->appAuthenticator);
+        $this->rateLimitService ??= new RedisRateLimitService($this->appAuthenticator->getShopDomain());
     }
 
     /**
      * @throws ClientNotInitializedException If the connector is not set
      * @throws ClientRequestFailedException If the response contains errors
      */
-    public function query(string $query, bool $withExtensions = false, bool $detailedCost = false): GraphQLClientTransformer
+    public function query(string $query, bool $withExtensions = false, bool $detailedCost = false, array $paginationConfig = []): GraphQLClientTransformer
     {
+        if (!empty($paginationConfig)) {
+            $query = QueryTransformer::transformQueryWithPagination($query, $paginationConfig);
+        }
+
         $response = $this->makeQueryRequest($query, $withExtensions, $detailedCost);
 
         /** @var array $response */
@@ -63,8 +68,12 @@ class GraphQLClientMethods
      * @throws ClientNotInitializedException If the connector is not set
      * @throws ClientRequestFailedException If the response contains errors
      */
-    public function mutate(string $query, array $variables, bool $withExtensions = false, bool $detailedCost = false): GraphQLClientTransformer
+    public function mutate(string $query, array $variables, bool $withExtensions = false, bool $detailedCost = false, array $paginationConfig = []): GraphQLClientTransformer
     {
+        if (!empty($paginationConfig)) {
+            $query = QueryTransformer::transformQueryWithPagination($query, $paginationConfig);
+        }
+
         $response = $this->makeMutationRequest($query, $variables, $withExtensions, $detailedCost);
 
         /** @var array $response */
