@@ -10,17 +10,20 @@ class CurrentBulkOperation extends BaseRequest
     {
         $currentBulkOperationQuery = <<<'GRAPHQL'
 {
-  currentBulkOperation {
-    id
-    status
-    errorCode
-    createdAt
-    completedAt
-    objectCount
-    fileSize
-    url
-    partialDataUrl
-  }
+    currentBulkOperation {
+        completedAt
+        createdAt
+        errorCode
+        fileSize
+        id
+        objectCount
+        partialDataUrl
+        query
+        rootObjectCount
+        status
+        type
+        url
+    }
 }
 GRAPHQL;
 
