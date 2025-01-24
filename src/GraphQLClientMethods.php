@@ -55,17 +55,15 @@ class GraphQLClientMethods
 
         $response = $this->makeQueryRequest($query, $withExtensions, $detailedCost);
 
-        /** @var array $response */
+        /** @var ?array $response */
         $response = $withExtensions ? $response : data_get($response, 'data', []);
 
         return new GraphQLClientTransformer(
-            data: array_filter($response)
+            data: array_filter($response ?? [])
         );
     }
 
     /**
-     * @param  array<mixed, mixed>  $variables
-     *
      * @throws ClientNotInitializedException If the connector is not set
      * @throws ClientRequestFailedException If the response contains errors
      */
@@ -77,11 +75,11 @@ class GraphQLClientMethods
 
         $response = $this->makeMutationRequest($query, $variables, $withExtensions, $detailedCost);
 
-        /** @var array $response */
+        /** @var ?array $response */
         $response = $withExtensions ? $response : data_get($response, 'data', []);
 
         return new GraphQLClientTransformer(
-            data: array_filter($response)
+            data: array_filter($response ?? [])
         );
     }
 
@@ -89,11 +87,11 @@ class GraphQLClientMethods
     {
         $response = $this->makeGetCurrentBulkOperationRequest();
 
-        /** @var array $response */
+        /** @var ?array $response */
         $response = data_get($response, 'data.currentBulkOperation', []);
 
         return new GraphQLClientTransformer(
-            data: $response
+            data: $response ?? []
         );
     }
 
@@ -101,11 +99,11 @@ class GraphQLClientMethods
     {
         $response = $this->makeCreateBulkOperationRequest($query);
 
-        /** @var array $response */
+        /** @var ?array $response */
         $response = data_get($response, 'data.bulkOperationRunQuery', []);
 
         return new GraphQLClientTransformer(
-            data: $response
+            data: $response ?? []
         );
     }
 
@@ -113,11 +111,11 @@ class GraphQLClientMethods
     {
         $response = $this->makeCancelBulkOperationRequest();
 
-        /** @var array $response */
+        /** @var ?array $response */
         $response = data_get($response, 'data.bulkOperationCancel', []);
 
         return new GraphQLClientTransformer(
-            data: $response
+            data: $response ?? []
         );
     }
 
