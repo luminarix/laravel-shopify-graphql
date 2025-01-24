@@ -10,22 +10,16 @@ use InvalidArgumentException;
 
 readonly class GraphQLClientTransformer
 {
-    /**
-     * @param  array<mixed, mixed>  $data
-     */
-    public function __construct(private array $data) {}
+    public function __construct(private ?array $data) {}
 
-    /**
-     * @return array<mixed, mixed>
-     */
-    public function toArray(): array
+    public function toArray(): ?array
     {
         return $this->data;
     }
 
     public function toFluent(): Fluent
     {
-        return fluent($this->data);
+        return fluent($this->data ?? []);
     }
 
     public function toCollection(): Collection
