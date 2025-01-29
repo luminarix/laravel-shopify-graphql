@@ -18,7 +18,7 @@ composer require luminarix/laravel-shopify-graphql
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --tag="laravel-shopify-graphql-config"
+php artisan vendor:publish --tag="shopify-graphql-config"
 ```
 
 ## Usage
