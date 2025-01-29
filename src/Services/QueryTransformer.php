@@ -6,9 +6,13 @@ namespace Luminarix\Shopify\GraphQLClient\Services;
 
 use GraphQL\Language\AST\ArgumentNode;
 use GraphQL\Language\AST\FieldNode;
+use GraphQL\Language\AST\FragmentDefinitionNode;
+use GraphQL\Language\AST\FragmentSpreadNode;
+use GraphQL\Language\AST\InlineFragmentNode;
 use GraphQL\Language\AST\NameNode;
 use GraphQL\Language\AST\Node;
 use GraphQL\Language\AST\NodeList;
+use GraphQL\Language\AST\OperationDefinitionNode;
 use GraphQL\Language\AST\SelectionSetNode;
 use GraphQL\Language\Parser;
 use GraphQL\Language\Printer;
@@ -25,11 +29,14 @@ class QueryTransformer implements QueryTransformable
 
         $ast = Parser::parse($queryString);
 
-        if (!isset($ast->definitions[0]) || !property_exists($ast->definitions[0], 'selectionSet')) {
-            return $queryString;
+        $fragments = [];
+        foreach ($ast->definitions as $definition) {
+            if ($definition instanceof FragmentDefinitionNode) {
+                $fragments[$definition->name->value] = $definition;
+            }
         }
 
-        $applyPaginationRecursively = static function (?SelectionSetNode $selectionSet, array $paginationConfig, array $pathStack = []) use (&$applyPaginationRecursively) {
+        $applyPaginationRecursively = static function (?SelectionSetNode $selectionSet, array $paginationConfig, array $pathStack = []) use (&$applyPaginationRecursively, &$fragments) {
             if ($selectionSet === null) {
                 return;
             }
@@ -45,11 +52,22 @@ class QueryTransformer implements QueryTransformable
                     }
 
                     $applyPaginationRecursively($selection->selectionSet, $paginationConfig, $currentPath);
+                } elseif ($selection instanceof FragmentSpreadNode) {
+                    $fragmentName = $selection->name->value;
+                    if (isset($fragments[$fragmentName])) {
+                        $applyPaginationRecursively($fragments[$fragmentName]->selectionSet, $paginationConfig, $pathStack);
+                    }
+                } elseif ($selection instanceof InlineFragmentNode) {
+                    $applyPaginationRecursively($selection->selectionSet, $paginationConfig, $pathStack);
                 }
             }
         };
 
-        $applyPaginationRecursively($ast->definitions[0]->selectionSet, $paginationConfig);
+        foreach ($ast->definitions as $definition) {
+            if ($definition instanceof OperationDefinitionNode) {
+                $applyPaginationRecursively($definition->selectionSet, $paginationConfig);
+            }
+        }
 
         return Printer::doPrint($ast);
     }
