@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-shopify-graphql` will be documented in this file.
 
+## v3.1.1 - 2025-02-25
+
+### What's Changed
+
+* Bump aglipanci/laravel-pint-action from 2.4 to 2.5 by @dependabot in https://github.com/luminarix/laravel-shopify-graphql/pull/4
+
+**Full Changelog**: https://github.com/luminarix/laravel-shopify-graphql/compare/v3.1.0...v3.1.1
+
 ## v3.1.0 - 2025-01-29
 
 ### What's Changed
