@@ -31,6 +31,10 @@ class ShopifyConnector extends Connector
 
     public function hasRequestFailed(Response $response): ?bool
     {
+        if ($response->serverError() || $response->clientError()) {
+            return true;
+        }
+
         $isThrottled = $this->isThrottled($response);
 
         if ($isThrottled && config('shopify-graphql.fail_on_throttled')) {
