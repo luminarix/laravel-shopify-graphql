@@ -83,6 +83,18 @@ class GraphQLClientMethods
         );
     }
 
+    public function getBulkOperation(int $id): GraphQLClientTransformer
+    {
+        $response = $this->makeGetBulkOperationRequest($id);
+
+        /** @var ?array $response */
+        $response = data_get($response, 'data.node', []);
+
+        return new GraphQLClientTransformer(
+            data: $response ?? []
+        );
+    }
+
     public function getCurrentBulkOperation(): GraphQLClientTransformer
     {
         $response = $this->makeGetCurrentBulkOperationRequest();
@@ -203,6 +215,17 @@ class GraphQLClientMethods
         return $response;
     }
 
+    private function makeGetBulkOperationRequest(int $id): array
+    {
+        throw_if($this->connector === null, ClientNotInitializedException::class);
+
+        $response = $this->connector->create()->getBulkOperation($id);
+
+        throw_if($response->failed(), ClientRequestFailedException::class, $response);
+
+        return Arr::wrap($response->json());
+    }
+
     /**
      * @throws ClientNotInitializedException
      * @throws ClientRequestFailedException
@@ -237,12 +260,17 @@ class GraphQLClientMethods
      * @throws ClientNotInitializedException
      * @throws ClientRequestFailedException
      */
-    private function makeCancelBulkOperationRequest(): array
+    private function makeCancelBulkOperationRequest(?int $id = null): array
     {
         throw_if($this->connector === null, ClientNotInitializedException::class);
 
         /** @var array $currentBulkOperation */
-        $currentBulkOperation = data_get($this->makeGetCurrentBulkOperationRequest(), 'data.currentBulkOperation');
+        $currentBulkOperation = when(
+            condition: $id !== null,
+            // @phpstan-ignore argument.type
+            value: data_get($this->makeGetBulkOperationRequest($id), 'data.node'),
+            default: data_get($this->makeGetCurrentBulkOperationRequest(), 'data.currentBulkOperation'),
+        );
         /** @var ?string $currentBulkOperationId */
         $currentBulkOperationId = data_get($currentBulkOperation, 'id');
         /** @var ?string $currentBulkOperationStatus */
