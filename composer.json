@@ -47,7 +47,7 @@
         }
     },
     "scripts": {
-        "analyse": "vendor/bin/phpstan analyse -v",
+        "analyse": "vendor/bin/phpstan analyse -v --memory-limit=2G",
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"
