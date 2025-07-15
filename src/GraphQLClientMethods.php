@@ -268,8 +268,8 @@ class GraphQLClientMethods
         $currentBulkOperation = when(
             condition: $id !== null,
             // @phpstan-ignore argument.type
-            value: data_get($this->makeGetBulkOperationRequest($id), 'data.node'),
-            default: data_get($this->makeGetCurrentBulkOperationRequest(), 'data.currentBulkOperation'),
+            value: fn () => data_get($this->makeGetBulkOperationRequest($id), 'data.node'),
+            default: fn () => data_get($this->makeGetCurrentBulkOperationRequest(), 'data.currentBulkOperation'),
         );
         /** @var ?string $currentBulkOperationId */
         $currentBulkOperationId = data_get($currentBulkOperation, 'id');
