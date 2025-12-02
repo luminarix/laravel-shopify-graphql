@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Luminarix\Shopify\GraphQLClient\Integrations\Requests;
 
+use Luminarix\Shopify\GraphQLClient\GraphQL\BulkOperationQueries;
+
 class CreateBulkOperation extends BaseRequest
 {
     public function __construct(
@@ -12,27 +14,8 @@ class CreateBulkOperation extends BaseRequest
 
     protected function defaultBody(): array
     {
-        $bulkOperation = <<<GRAPHQL
-mutation {
-  bulkOperationRunQuery(
-   query: """
-    {$this->graphqlQuery}
-    """
-  ) {
-    bulkOperation {
-      id
-      status
-    }
-    userErrors {
-      field
-      message
-    }
-  }
-}
-GRAPHQL;
-
         return [
-            'query' => $bulkOperation,
+            'query' => BulkOperationQueries::create($this->graphqlQuery),
         ];
     }
 }
