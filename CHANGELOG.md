@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-shopify-graphql` will be documented in this file.
 
+## v4.0.1 - 2025-12-02
+
+Dropped Laravel 11 support.
+
+**Full Changelog**: https://github.com/luminarix/laravel-shopify-graphql/compare/v4.0.0...v4.0.1
+
 ## v4.0.0 - 2025-12-02
 
 **Full Changelog**: https://github.com/luminarix/laravel-shopify-graphql/compare/v3.2.1...v4.0.0
