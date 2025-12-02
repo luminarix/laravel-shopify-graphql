@@ -55,6 +55,6 @@ class ShopifyConnector extends Connector
         /** @var array $bulkOperationUserErrors */
         $bulkOperationUserErrors = data_get($responseJson, 'data.bulkOperationRunQuery.userErrors', []);
 
-        return ($hasErrors && !$isThrottled) || count($bulkOperationUserErrors) > 0;
+        return ($hasErrors && !$isThrottled) || $bulkOperationUserErrors !== [];
     }
 }
