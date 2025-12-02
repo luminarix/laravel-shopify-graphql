@@ -39,7 +39,10 @@
         "psr-4": {
             "Luminarix\\Shopify\\GraphQLClient\\": "src/",
             "Luminarix\\Shopify\\GraphQLClient\\Database\\Factories\\": "database/factories/"
-        }
+        },
+        "files": [
+            "src/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

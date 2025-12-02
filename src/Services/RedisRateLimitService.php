@@ -94,7 +94,7 @@ class RedisRateLimitService implements RateLimitable
 
         if ($waitTime > 0) {
             // Sleep for the calculated wait time
-            Sleep::sleep($waitTime);
+            true_sleep($waitTime);
         }
     }
 }
