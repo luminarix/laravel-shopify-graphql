@@ -6,11 +6,14 @@ namespace Luminarix\Shopify\GraphQLClient;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Fluent;
+use Illuminate\Support\Traits\Macroable;
 use InvalidArgumentException;
 
-readonly class GraphQLClientTransformer
+class GraphQLClientTransformer
 {
-    public function __construct(private array $data) {}
+    use Macroable;
+
+    public function __construct(private readonly array $data) {}
 
     public function toArray(): array
     {

@@ -4,323 +4,184 @@ declare(strict_types=1);
 
 namespace Luminarix\Shopify\GraphQLClient;
 
-use Illuminate\Support\Arr;
 use Illuminate\Support\Traits\Macroable;
-use JetBrains\PhpStorm\ArrayShape;
 use Luminarix\Shopify\GraphQLClient\Authenticators\Abstracts\AbstractAppAuthenticator;
 use Luminarix\Shopify\GraphQLClient\Contracts\RateLimitable;
-use Luminarix\Shopify\GraphQLClient\Exceptions\ClientNotInitializedException;
+use Luminarix\Shopify\GraphQLClient\Contracts\ThrottleDetectable;
+use Luminarix\Shopify\GraphQLClient\Enums\ResponsePath;
 use Luminarix\Shopify\GraphQLClient\Exceptions\ClientRequestFailedException;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\BulkOperation;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\CancelBulkOperation;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\CreateBulkOperation;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\CurrentBulkOperation;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\Mutation;
+use Luminarix\Shopify\GraphQLClient\Integrations\Requests\Query;
 use Luminarix\Shopify\GraphQLClient\Integrations\ShopifyConnector;
 use Luminarix\Shopify\GraphQLClient\Services\QueryTransformer;
 use Luminarix\Shopify\GraphQLClient\Services\RedisRateLimitService;
+use Luminarix\Shopify\GraphQLClient\Services\RequestExecutor;
+use Luminarix\Shopify\GraphQLClient\Services\ThrottleDetector;
 
 class GraphQLClientMethods
 {
     use Macroable;
 
-    private ?ShopifyConnector $connector = null;
-
-    private float|int|null $requestedQueryCost = null;
-
-    private float|int|null $actualQueryCost = null;
-
-    private float|int|null $maximumAvailable = null;
-
-    private float|int|null $currentlyAvailable = null;
-
-    private float|int|null $restoreRate = null;
-
-    private bool $isThrottled = false;
-
-    private int $tries = 0;
+    private readonly RequestExecutor $executor;
 
     public function __construct(
-        private readonly AbstractAppAuthenticator $appAuthenticator,
-        private ?RateLimitable $rateLimitService = null,
+        AbstractAppAuthenticator $appAuthenticator,
+        ?RateLimitable $rateLimitService = null,
+        ?ThrottleDetectable $throttleDetector = null,
     ) {
-        $this->connector = new ShopifyConnector($this->appAuthenticator);
-        $this->rateLimitService ??= new RedisRateLimitService($this->appAuthenticator->getShopDomain());
+        $connector = new ShopifyConnector($appAuthenticator);
+        $rateLimitService ??= new RedisRateLimitService($appAuthenticator->getShopDomain());
+        $throttleDetector ??= new ThrottleDetector;
+
+        $this->executor = new RequestExecutor($connector, $rateLimitService, $throttleDetector);
     }
 
     /**
-     * @throws ClientNotInitializedException If the connector is not set
-     * @throws ClientRequestFailedException If the response contains errors
+     * @throws ClientRequestFailedException
      */
-    public function query(string $query, bool $withExtensions = false, bool $detailedCost = false, array $paginationConfig = []): GraphQLClientTransformer
-    {
-        if (!empty($paginationConfig)) {
-            $query = QueryTransformer::transformQueryWithPagination($query, $paginationConfig);
-        }
+    public function query(
+        string $query,
+        bool $withExtensions = false,
+        bool $detailedCost = false,
+        array $paginationConfig = [],
+    ): GraphQLClientTransformer {
+        $query = $this->applyPagination($query, $paginationConfig);
 
-        $response = $this->makeQueryRequest($query, $withExtensions, $detailedCost);
+        $request = new Query($query, $detailedCost);
+        $response = $this->executor->execute($request);
 
-        /** @var ?array $response */
-        $response = $withExtensions ? $response : data_get($response, 'data', []);
-
-        return new GraphQLClientTransformer(
-            data: array_filter($response ?? [])
-        );
+        return $this->transformResponse($response, ResponsePath::Data, $withExtensions);
     }
 
     /**
-     * @throws ClientNotInitializedException If the connector is not set
-     * @throws ClientRequestFailedException If the response contains errors
+     * @throws ClientRequestFailedException
      */
-    public function mutate(string $query, array $variables, bool $withExtensions = false, bool $detailedCost = false, array $paginationConfig = []): GraphQLClientTransformer
-    {
-        if (!empty($paginationConfig)) {
-            $query = QueryTransformer::transformQueryWithPagination($query, $paginationConfig);
-        }
+    public function mutate(
+        string $query,
+        array $variables,
+        bool $withExtensions = false,
+        bool $detailedCost = false,
+        array $paginationConfig = [],
+    ): GraphQLClientTransformer {
+        $query = $this->applyPagination($query, $paginationConfig);
 
-        $response = $this->makeMutationRequest($query, $variables, $withExtensions, $detailedCost);
+        $request = new Mutation($query, $variables, $detailedCost);
+        $response = $this->executor->execute($request);
 
-        /** @var ?array $response */
-        $response = $withExtensions ? $response : data_get($response, 'data', []);
-
-        return new GraphQLClientTransformer(
-            data: array_filter($response ?? [])
-        );
+        return $this->transformResponse($response, ResponsePath::Data, $withExtensions);
     }
 
+    /**
+     * @throws ClientRequestFailedException
+     */
     public function getBulkOperation(int $id): GraphQLClientTransformer
     {
-        $response = $this->makeGetBulkOperationRequest($id);
+        $request = new BulkOperation($id);
+        $response = $this->executor->execute($request, trackRateLimits: false);
 
-        /** @var ?array $response */
-        $response = data_get($response, 'data.node', []);
-
-        return new GraphQLClientTransformer(
-            data: $response ?? []
-        );
+        return $this->transformResponse($response, ResponsePath::BulkOperationNode);
     }
 
+    /**
+     * @throws ClientRequestFailedException
+     */
     public function getCurrentBulkOperation(): GraphQLClientTransformer
     {
-        $response = $this->makeGetCurrentBulkOperationRequest();
+        $request = new CurrentBulkOperation;
+        $response = $this->executor->execute($request, trackRateLimits: false);
 
-        /** @var ?array $response */
-        $response = data_get($response, 'data.currentBulkOperation', []);
-
-        return new GraphQLClientTransformer(
-            data: $response ?? []
-        );
+        return $this->transformResponse($response, ResponsePath::CurrentBulkOperation);
     }
 
+    /**
+     * @throws ClientRequestFailedException
+     */
     public function createBulkOperation(string $query): GraphQLClientTransformer
     {
-        $response = $this->makeCreateBulkOperationRequest($query);
+        $request = new CreateBulkOperation($query);
+        $response = $this->executor->execute($request, trackRateLimits: false);
 
-        /** @var ?array $response */
-        $response = data_get($response, 'data.bulkOperationRunQuery', []);
-
-        return new GraphQLClientTransformer(
-            data: $response ?? []
-        );
+        return $this->transformResponse($response, ResponsePath::BulkOperationRunQuery);
     }
 
-    public function cancelBulkOperation(): GraphQLClientTransformer
+    /**
+     * @throws ClientRequestFailedException
+     */
+    public function cancelBulkOperation(?int $id = null): GraphQLClientTransformer
     {
-        $response = $this->makeCancelBulkOperationRequest();
+        $bulkOperation = $this->resolveBulkOperationForCancellation($id);
+        $this->validateBulkOperationCancellable($bulkOperation);
 
-        /** @var ?array $response */
-        $response = data_get($response, 'data.bulkOperationCancel', []);
+        /** @var string $bulkOperationId */
+        $bulkOperationId = data_get($bulkOperation, 'id');
 
-        return new GraphQLClientTransformer(
-            data: $response ?? []
-        );
+        $request = new CancelBulkOperation($bulkOperationId);
+        $response = $this->executor->execute($request, trackRateLimits: false);
+
+        return $this->transformResponse($response, ResponsePath::BulkOperationCancel);
     }
 
-    #[ArrayShape([
-        'requestedQueryCost' => 'float|int|null',
-        'actualQueryCost' => 'float|int|null',
-        'maxAvailableLimit' => 'float|int|null',
-        'lastAvailableLimit' => 'float|int|null',
-        'restoreRate' => 'float|int|null',
-        'isThrottled' => 'bool',
-    ])]
     public function getRateLimitInfo(): array
     {
-        return [
-            'requestedQueryCost' => $this->requestedQueryCost,
-            'actualQueryCost' => $this->actualQueryCost,
-            'maxAvailableLimit' => $this->maximumAvailable,
-            'lastAvailableLimit' => $this->currentlyAvailable,
-            'restoreRate' => $this->restoreRate,
-            'isThrottled' => $this->isThrottled,
+        return $this->executor->getLastRateLimitState()?->toArray() ?? [
+            'requestedQueryCost' => null,
+            'actualQueryCost' => null,
+            'maxAvailableLimit' => null,
+            'lastAvailableLimit' => null,
+            'restoreRate' => null,
+            'isThrottled' => false,
         ];
     }
 
-    /**
-     * @throws ClientNotInitializedException
-     * @throws ClientRequestFailedException
-     */
-    private function makeQueryRequest(string $query, bool $withExtensions = false, bool $detailedCost = false): array
+    private function applyPagination(string $query, array $paginationConfig): string
     {
-        throw_if($this->connector === null, ClientNotInitializedException::class);
-
-        $response = $this->connector->create()->query($query, $detailedCost);
-
-        throw_if($response->failed(), ClientRequestFailedException::class, $response);
-
-        $response = Arr::wrap($response->json());
-
-        $this->ispectResponse($response);
-
-        if ($this->isThrottled) {
-            if ($this->tries < config('shopify-graphql.throttle_max_tries')) {
-                $this->tries++;
-
-                // @phpstan-ignore method.nonObject
-                $this->rateLimitService->waitIfNecessary((float)$this->requestedQueryCost);
-
-                return $this->makeQueryRequest($query, $withExtensions, $detailedCost);
-            }
-
-            throw_if(true, ClientRequestFailedException::class, json_encode($response));
+        if (empty($paginationConfig)) {
+            return $query;
         }
 
-        return $response;
+        return QueryTransformer::transformQueryWithPagination($query, $paginationConfig);
     }
 
-    /**
-     * @throws ClientNotInitializedException
-     * @throws ClientRequestFailedException
-     */
-    private function makeMutationRequest(string $query, array $variables, bool $withExtensions = false, bool $detailedCost = false): array
-    {
-        throw_if($this->connector === null, ClientNotInitializedException::class);
-
-        $response = $this->connector->create()->mutation($query, $variables, $detailedCost);
-
-        throw_if($response->failed(), ClientRequestFailedException::class, $response);
-
-        $response = Arr::wrap($response->json());
-
-        $this->ispectResponse($response);
-
-        if ($this->isThrottled) {
-            if ($this->tries < config('shopify-graphql.throttle_max_tries')) {
-                $this->tries++;
-
-                // @phpstan-ignore method.nonObject
-                $this->rateLimitService->waitIfNecessary((float)$this->requestedQueryCost);
-
-                return $this->makeMutationRequest($query, $variables, $withExtensions, $detailedCost);
-            }
-
-            throw_if(true, ClientRequestFailedException::class, json_encode($response));
-        }
-
-        return $response;
-    }
-
-    private function makeGetBulkOperationRequest(int $id): array
-    {
-        throw_if($this->connector === null, ClientNotInitializedException::class);
-
-        $response = $this->connector->create()->getBulkOperation($id);
-
-        throw_if($response->failed(), ClientRequestFailedException::class, $response);
-
-        return Arr::wrap($response->json());
-    }
-
-    /**
-     * @throws ClientNotInitializedException
-     * @throws ClientRequestFailedException
-     */
-    private function makeGetCurrentBulkOperationRequest(): array
-    {
-        throw_if($this->connector === null, ClientNotInitializedException::class);
-
-        $response = $this->connector->create()->currentBulkOperation();
-
-        throw_if($response->failed(), ClientRequestFailedException::class, $response);
-
-        return Arr::wrap($response->json());
-    }
-
-    /**
-     * @throws ClientNotInitializedException
-     * @throws ClientRequestFailedException
-     */
-    private function makeCreateBulkOperationRequest(string $query): array
-    {
-        throw_if($this->connector === null, ClientNotInitializedException::class);
-
-        $response = $this->connector->create()->createBulkOperation($query);
-
-        throw_if($response->failed(), ClientRequestFailedException::class, $response);
-
-        return Arr::wrap($response->json());
-    }
-
-    /**
-     * @throws ClientNotInitializedException
-     * @throws ClientRequestFailedException
-     */
-    private function makeCancelBulkOperationRequest(?int $id = null): array
-    {
-        throw_if($this->connector === null, ClientNotInitializedException::class);
-
-        /** @var array $currentBulkOperation */
-        $currentBulkOperation = when(
-            condition: $id !== null,
-            // @phpstan-ignore argument.type
-            value: fn () => data_get($this->makeGetBulkOperationRequest($id), 'data.node'),
-            default: fn () => data_get($this->makeGetCurrentBulkOperationRequest(), 'data.currentBulkOperation'),
-        );
-        /** @var ?string $currentBulkOperationId */
-        $currentBulkOperationId = data_get($currentBulkOperation, 'id');
-        /** @var ?string $currentBulkOperationStatus */
-        $currentBulkOperationStatus = data_get($currentBulkOperation, 'status');
-        $doesntHaveIdOrNotCancellable = $currentBulkOperationId === null || !in_array($currentBulkOperationStatus, ['CREATED', 'RUNNING']);
-
-        throw_if($doesntHaveIdOrNotCancellable, ClientRequestFailedException::class, 'There is no bulk operation to cancel.');
-
-        $response = $this->connector->create()->cancelBulkOperation($currentBulkOperationId);
-
-        throw_if($response->failed(), ClientRequestFailedException::class, $response);
-
-        return Arr::wrap($response->json());
-    }
-
-    private function ispectResponse(
+    private function transformResponse(
         array $response,
-    ): void {
-        $this->updateRateLimitInfo($response);
+        ResponsePath $path,
+        bool $withExtensions = false,
+    ): GraphQLClientTransformer {
+        if ($withExtensions) {
+            return new GraphQLClientTransformer(array_filter($response));
+        }
+
+        return new GraphQLClientTransformer($path->extract($response));
     }
 
-    private function updateRateLimitInfo(array $response): void
+    /**
+     * @throws ClientRequestFailedException
+     */
+    private function resolveBulkOperationForCancellation(?int $id): array
     {
-        $this->requestedQueryCost = $this->getCost($response, 'requestedQueryCost');
-        $this->actualQueryCost = $this->getCost($response, 'actualQueryCost');
-        $this->maximumAvailable = $this->getCost($response, 'throttleStatus.maximumAvailable');
-        $this->currentlyAvailable = $this->getCost($response, 'throttleStatus.currentlyAvailable');
-        $this->restoreRate = $this->getCost($response, 'throttleStatus.restoreRate');
-        $this->isThrottled = $this->isThrottled($response);
+        if ($id !== null) {
+            return $this->getBulkOperation($id)->toArray();
+        }
 
-        $rateLimitData = [
-            'maximumAvailable' => $this->maximumAvailable,
-            'currentlyAvailable' => $this->currentlyAvailable,
-            'restoreRate' => $this->restoreRate,
-        ];
-
-        // @phpstan-ignore method.nonObject
-        $this->rateLimitService->updateRateLimitInfo($rateLimitData);
+        return $this->getCurrentBulkOperation()->toArray();
     }
 
-    private function getCost(array $response, string $costType): float|int|null
+    /**
+     * @throws ClientRequestFailedException
+     */
+    private function validateBulkOperationCancellable(array $bulkOperation): void
     {
-        /** @var float|int|null $cost */
-        $cost = data_get($response, "extensions.cost.{$costType}");
+        /** @var ?string $bulkOperationId */
+        $bulkOperationId = data_get($bulkOperation, 'id');
+        /** @var ?string $status */
+        $status = data_get($bulkOperation, 'status');
 
-        return $cost;
-    }
+        $canCancel = $bulkOperationId !== null && in_array($status, ['CREATED', 'RUNNING'], true);
 
-    private function isThrottled(array $response): bool
-    {
-        return data_get($response, 'errors.0.extensions.code') === 'THROTTLED';
+        throw_if(!$canCancel, ClientRequestFailedException::class, 'There is no bulk operation to cancel.');
     }
 }
