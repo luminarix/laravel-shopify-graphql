@@ -28,9 +28,9 @@
         "laravel/pint": "^1.15",
         "nunomaduro/collision": "^8.1.1",
         "orchestra/testbench": "^9.0.0|^10.0.0",
-        "pestphp/pest": "^3.5.0",
-        "pestphp/pest-plugin-arch": "^v3.0.0",
-        "pestphp/pest-plugin-laravel": "^v3.0.0",
+        "pestphp/pest": "^v4.1.6",
+        "pestphp/pest-plugin-arch": "^v4.0.0",
+        "pestphp/pest-plugin-laravel": "^v4.0.0",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan-deprecation-rules": "^2.0.0",
         "phpstan/phpstan-phpunit": "^2.0.1"
@@ -48,8 +48,8 @@
     },
     "scripts": {
         "analyse": "vendor/bin/phpstan analyse -v --memory-limit=2G",
-        "test": "vendor/bin/pest",
-        "test-coverage": "vendor/bin/pest --coverage",
+        "test": "vendor/bin/pest --no-coverage",
+        "test:coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"
     },
     "config": {
