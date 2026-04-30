@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-shopify-graphql` will be documented in this file.
 
+## v4.0.3 - 2026-04-30
+
+### What's Changed
+
+* Bump dependabot/fetch-metadata from 2.4.0 to 2.5.0 by @dependabot[bot] in https://github.com/luminarix/laravel-shopify-graphql/pull/11
+
+**Full Changelog**: https://github.com/luminarix/laravel-shopify-graphql/compare/v4.0.2...v4.0.3
+
 ## v4.0.2 - 2025-12-02
 
 **Full Changelog**: https://github.com/luminarix/laravel-shopify-graphql/compare/v4.0.1...v4.0.2
